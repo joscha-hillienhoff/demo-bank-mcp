@@ -81,3 +81,5 @@ human catch it, and the limits bound the damage if both fail.
 - **Data minimisation:** compare a raw `GET /v1/accounts` response (with the owner's name) to
   what `list_accounts` returns.
 - **Least privilege:** `get_client()` versus `get_write_client()` in `server.py`.
+
+Next: [hosts and transports](05-hosts-and-transports.md).
