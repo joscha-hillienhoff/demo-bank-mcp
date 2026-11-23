@@ -131,7 +131,7 @@ for hosts that cannot use structured results.
   leak into a transcript.
 - **Errors the model can act on.** An unknown account becomes
   `Bank API error 404: Account not found`, returned with `isError: true`.
-- **Read-only token.** The server's token has only the `accounts:read` scope.
+- **Read-only token.** The read tools use a token with only the `accounts:read` scope. The transfer tools in [guide 3](03-write-flow-and-confirmation.md) use a separate token.
 
 ## Resources and prompts
 

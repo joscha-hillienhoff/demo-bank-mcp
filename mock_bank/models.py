@@ -77,10 +77,11 @@ class TransactionResponse(ApiModel):
 
 
 class DraftStatus(StrEnum):
-    """Lifecycle of a payment draft. Later stages add expiry handling."""
+    """Lifecycle of a payment draft: pending, then confirmed (executed) or expired."""
 
     PENDING = "pending"
     CONFIRMED = "confirmed"
+    EXPIRED = "expired"
 
 
 class PaymentDraftRequest(ApiModel):
@@ -95,6 +96,8 @@ class PaymentDraftRequest(ApiModel):
     def amount_must_be_positive(cls, value: Amount) -> Amount:
         if value.amount <= 0:
             raise ValueError("amount must be greater than zero")
+        if value.currency != "EUR":
+            raise ValueError("only EUR payments are supported")
         return value
 
 
@@ -105,6 +108,7 @@ class PaymentDraft(ApiModel):
     status: DraftStatus
     created_at: datetime
     expires_at: datetime
+    confirmed_at: datetime | None = None
     debtor_account_id: str
     creditor_name: str
     creditor_iban: str

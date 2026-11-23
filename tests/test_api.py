@@ -184,3 +184,83 @@ def test_drafts_are_not_shared_between_apps(client, full_headers):
     other = TestClient(create_app())
     response = other.post(f"/v1/payments/drafts/{draft['id']}/confirm", headers=full_headers)
     assert response.status_code == 404
+
+
+# --- limits and expiry ---
+
+
+def draft(client, headers, **overrides):
+    return client.post("/v1/payments/drafts", json={**DRAFT_BODY, **overrides}, headers=headers)
+
+
+def confirm(client, headers, draft_id):
+    return client.post(f"/v1/payments/drafts/{draft_id}/confirm", headers=headers)
+
+
+def test_confirm_works_until_the_draft_expires(client, clock, full_headers):
+    draft_id = draft(client, full_headers).json()["id"]
+    clock.advance(minutes=4, seconds=59)
+    assert confirm(client, full_headers, draft_id).status_code == 200
+
+
+def test_confirm_after_expiry_returns_410(client, clock, full_headers):
+    draft_id = draft(client, full_headers).json()["id"]
+    clock.advance(minutes=5)
+    response = confirm(client, full_headers, draft_id)
+    assert response.status_code == 410
+    assert "expired" in response.json()["detail"]
+    # Still expired afterwards, not "unknown" or "pending".
+    assert confirm(client, full_headers, draft_id).status_code == 410
+
+
+def test_amount_limit_is_inclusive(client, full_headers):
+    body = {"instructedAmount": {"currency": "EUR", "amount": "1000.00"}}
+    assert draft(client, full_headers, **body).status_code == 201
+
+
+def test_amount_above_the_limit_is_rejected(client, full_headers):
+    body = {"instructedAmount": {"currency": "EUR", "amount": "1000.01"}}
+    response = draft(client, full_headers, **body)
+    assert response.status_code == 422
+    assert "1000.00 EUR per transfer" in response.json()["detail"]
+
+
+def test_only_euro_is_supported(client, full_headers):
+    body = {"instructedAmount": {"currency": "USD", "amount": "10.00"}}
+    assert draft(client, full_headers, **body).status_code == 422
+
+
+def test_fourth_transfer_of_the_day_is_refused(client, full_headers):
+    for _ in range(3):
+        assert (
+            confirm(client, full_headers, draft(client, full_headers).json()["id"]).status_code
+            == 200
+        )
+    response = draft(client, full_headers)
+    assert response.status_code == 429
+    assert "3 transfers per day" in response.json()["detail"]
+
+
+def test_daily_limit_is_checked_again_on_confirm(client, full_headers):
+    # Four drafts prepared in advance: only three of them can be executed.
+    ids = [draft(client, full_headers).json()["id"] for _ in range(4)]
+    statuses = [confirm(client, full_headers, draft_id).status_code for draft_id in ids]
+    assert statuses == [200, 200, 200, 429]
+
+
+def test_unconfirmed_drafts_do_not_count_towards_the_daily_limit(client, full_headers):
+    for _ in range(5):
+        assert draft(client, full_headers).status_code == 201
+
+
+def test_daily_limit_resets_on_the_next_day(client, clock, full_headers):
+    for _ in range(3):
+        confirm(client, full_headers, draft(client, full_headers).json()["id"])
+    clock.advance(days=1)
+    assert draft(client, full_headers).status_code == 201
+
+
+def test_read_token_cannot_confirm_a_draft(client, full_headers, read_headers):
+    draft_id = draft(client, full_headers).json()["id"]
+    assert confirm(client, read_headers, draft_id).status_code == 403
+    assert confirm(client, full_headers, draft_id).status_code == 200
