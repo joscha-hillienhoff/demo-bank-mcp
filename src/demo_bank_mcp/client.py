@@ -7,7 +7,8 @@ the small typed results defined here, which keep just the fields an assistant
 needs (the raw API responses are more verbose).
 """
 
-from datetime import date
+from datetime import date, datetime
+from urllib.parse import quote
 
 import httpx
 from pydantic import BaseModel
@@ -51,8 +52,22 @@ class Transaction(BaseModel):
     category: str
 
 
+class PaymentDraft(BaseModel):
+    """A prepared payment. `status` is "pending" until it is confirmed."""
+
+    id: str
+    status: str
+    expires_at: datetime
+    debtor_account_id: str
+    creditor_name: str
+    creditor_iban: str
+    amount: str  # decimal string such as "25.00", as in the API
+    currency: str
+    purpose: str
+
+
 class BankClient:
-    """Read-only calls against the bank API (account information)."""
+    """Calls against the bank API. What a call may do depends on the token's scopes."""
 
     def __init__(self, http: httpx.Client) -> None:
         # The caller configures base URL and Authorization header on `http`.
@@ -109,11 +124,49 @@ class BankClient:
             for t in body["transactions"]["booked"]
         ]
 
+    def create_draft(
+        self, account_id: str, creditor_name: str, creditor_iban: str, amount: str, purpose: str
+    ) -> PaymentDraft:
+        """Prepare a payment (scope payments:write). Nothing is executed yet."""
+        body = {
+            "debtorAccountId": account_id,
+            "creditorName": creditor_name,
+            "creditorIban": creditor_iban,
+            "instructedAmount": {"currency": "EUR", "amount": amount},
+            "remittanceInformationUnstructured": purpose,
+        }
+        return _to_draft(self._post("/v1/payments/drafts", json=body))
+
+    def confirm_draft(self, draft_id: str) -> PaymentDraft:
+        """Execute a pending, unexpired draft (scope payments:write)."""
+        # quote(): the draft id comes from the model, so it must not alter the path.
+        return _to_draft(self._post(f"/v1/payments/drafts/{quote(draft_id, safe='')}/confirm"))
+
     def _get(self, path: str, params: dict[str, str] | None = None) -> dict:
-        response = self._http.get(path, params=params)
+        return self._checked(self._http.get(path, params=params))
+
+    def _post(self, path: str, json: dict | None = None) -> dict:
+        return self._checked(self._http.post(path, json=json))
+
+    @staticmethod
+    def _checked(response: httpx.Response) -> dict:
         if response.is_error:
             raise BankApiError(response.status_code, _error_detail(response))
         return response.json()
+
+
+def _to_draft(body: dict) -> PaymentDraft:
+    return PaymentDraft(
+        id=body["id"],
+        status=body["status"],
+        expires_at=body["expiresAt"],
+        debtor_account_id=body["debtorAccountId"],
+        creditor_name=body["creditorName"],
+        creditor_iban=body["creditorIban"],
+        amount=body["instructedAmount"]["amount"],
+        currency=body["instructedAmount"]["currency"],
+        purpose=body["remittanceInformationUnstructured"],
+    )
 
 
 def _error_detail(response: httpx.Response) -> str:

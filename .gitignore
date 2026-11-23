@@ -12,3 +12,5 @@ build/
 
 # Local secrets: only .env.example is committed
 .env
+
+logs/
