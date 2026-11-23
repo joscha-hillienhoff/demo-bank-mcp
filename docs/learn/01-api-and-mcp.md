@@ -20,15 +20,15 @@ and re-publishes selected parts of it in a form an AI host can discover and use:
 | Consumer | A programmer who read the docs | A language model, at run time |
 | Discovery | OpenAPI document, read by a human | `tools/list`, `resources/list`, `prompts/list`, answered by the server itself |
 | Contract | Endpoints and JSON shapes | Names, natural-language descriptions and JSON Schemas |
-| Auth | Bearer token with scopes | Same: the server holds one token and decides what it exposes |
+| Auth | Bearer token with scopes | Same: the server holds the tokens and decides what it exposes |
 
 The point of the split: the API stays the source of truth and keeps its own security (scopes,
 status codes). The MCP layer adds what a model needs on top: descriptions it can read, compact
 results, masked data and clear error messages.
 
-The MCP server only holds the read-only token (`accounts:read`, see [`.env.example`](../../.env.example)).
-Even if a model misbehaved, this server could not call a payment endpoint, because the API would
-answer 403.
+The MCP server holds two tokens (see [`.env.example`](../../.env.example)): the read tools use one
+with only `accounts:read`, and only the two transfer tools use the one with `payments:write`. A
+bug in a read tool could therefore not start a payment, because the API would answer 403.
 
 ## The transport: JSON-RPC over stdio
 
