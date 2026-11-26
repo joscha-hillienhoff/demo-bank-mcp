@@ -14,10 +14,10 @@ earlier ones.
 Related: [REST API vs. MCP vs. A2A](../mcp-vs-api.md), the
 [security patterns reference](../security-patterns.md) and the [demo script](../demo-script.md).
 
-## Self-check questions
+## Questions to explore
 
-Questions only; the answers are in the guides named in brackets. Try to answer aloud before
-looking.
+These questions help you check your understanding as you go. The guides named in brackets cover
+each one, so use them to dig deeper or compare notes.
 
 1. Why does this project run the REST API and the MCP server as two separate programs? What does
    the MCP layer add that the API does not have? [1]

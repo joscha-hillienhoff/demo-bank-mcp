@@ -103,4 +103,5 @@ the draft, the expiry and the limits would stay.
 With the mock API running and `.env` in place, open the inspector with
 `uv run mcp dev src/demo_bank_mcp/server.py`, call `prepare_transfer` with 25 EUR, then
 `confirm_transfer` with the returned id. Then try the failures: confirm the same id again, prepare
-5000 EUR, or wait five minutes before confirming.
+5000 EUR, or wait five minutes before confirming. The inspector runs through `npx`, so it needs
+Node.js.

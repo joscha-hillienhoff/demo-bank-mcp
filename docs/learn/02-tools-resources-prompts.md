@@ -53,7 +53,8 @@ The host never sees Python. It sees JSON that FastMCP generates from the functio
 AccountId = Annotated[str, Field(description='Account id from list_accounts, e.g. "acc-giro".')]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
+@audited
 def get_balance(account_id: AccountId) -> Balance:
     """Get the current booked balance of one account."""
 ```
@@ -145,4 +146,4 @@ A prompt is fetched with `prompts/get` and arguments. For `monthly_summary` with
 result. The prompt contains no data itself; it steers the model towards the tools.
 
 Try it all in the MCP Inspector: `uv run mcp dev src/demo_bank_mcp/server.py`, with the mock API
-running and `.env` in place.
+running and `.env` in place. `mcp dev` starts the Inspector through `npx`, so it needs Node.js.
