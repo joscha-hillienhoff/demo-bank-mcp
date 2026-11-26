@@ -87,6 +87,8 @@ uv run demo-bank-mcp
 uv run mcp dev src/demo_bank_mcp/server.py
 ```
 
+`mcp dev` starts the MCP Inspector through `npx`, so it needs Node.js.
+
 The server reads its mock tokens and the API URL from `.env`. The mock API keeps its drafts and
 the daily transfer count in memory, so restarting it resets both.
 
@@ -137,20 +139,8 @@ code. Read them in order:
 4. [Security patterns and prompt injection](docs/learn/04-security-patterns.md): a walk-through of the injected transaction in the seeded data.
 5. [Hosts and transports](docs/learn/05-hosts-and-transports.md): how a host launches a stdio server, the config file, startup, and stdio versus Streamable HTTP.
 
-[docs/learn/README.md](docs/learn/README.md) ends with a list of self-check questions for the whole
+[docs/learn/README.md](docs/learn/README.md) ends with a list of questions to explore across the whole
 project.
-
-## Demo screenshots
-
-> **Placeholders.** The images are added after the walk-through in Claude Desktop. Until then the
-> files below do not exist.
-
-| Step | Image (to be added) |
-| --- | --- |
-| 1. Balance question | `docs/img/01-balance.png` |
-| 2. Spending by category | `docs/img/02-food-spending.png` |
-| 3. Transfer draft and confirmation | `docs/img/03-transfer-confirmation.png` |
-| 4. Injected transaction, no transfer | `docs/img/04-injection.png` |
 
 ## Test and lint
 
@@ -175,3 +165,7 @@ This is a teaching project, not a banking product.
   [docs/security-patterns.md](docs/security-patterns.md).
 - **Simplified standards.** The endpoints follow NextGenPSD2 in spirit but are not compliant with
   it.
+
+## License
+
+[MIT](LICENSE)

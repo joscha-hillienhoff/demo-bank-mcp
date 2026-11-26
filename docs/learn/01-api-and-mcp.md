@@ -78,6 +78,7 @@ Two practical consequences of stdio:
 - **The host owns the process.** It starts the server when needed and ends it by closing stdin.
 
 You can also explore everything interactively with the MCP Inspector:
-`uv run mcp dev src/demo_bank_mcp/server.py`.
+`uv run mcp dev src/demo_bank_mcp/server.py`. It starts the Inspector through `npx`, so it needs
+Node.js.
 
 Next: [tools, resources and prompts](02-tools-resources-prompts.md).
